@@ -236,6 +236,7 @@ const vm = {
   globalTimerEnabled: false,
   globalTimerDuration: 60,
   speechEnabled: true,
+  soundEnabled: true,
 
   // Partie en cours
   questions: [],
@@ -275,6 +276,38 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const plural = (n, s = "s") => n > 1 ? s : "";
+
+/* =========================================================
+   Petits sons de réussite / d'erreur
+   Générés par Web Audio : aucun fichier à charger.
+   ========================================================= */
+let audioCtx = null;
+function playSound(kind) {
+  if (!vm.soundEnabled) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    audioCtx = audioCtx || new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+
+    // Réussite : deux notes qui montent. Erreur : deux notes qui descendent.
+    const notes = kind === "ok" ? [[784, 0], [1175, 0.10]] : [[311, 0], [196, 0.12]];
+    const t0 = audioCtx.currentTime;
+
+    for (const [freq, at] of notes) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = kind === "ok" ? "sine" : "triangle";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0 + at);
+      gain.gain.exponentialRampToValueAtTime(kind === "ok" ? 0.16 : 0.12, t0 + at + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + at + 0.20);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0 + at);
+      osc.stop(t0 + at + 0.22);
+    }
+  } catch (e) { /* le son n'est jamais bloquant */ }
+}
 
 /* ---------- Synthèse vocale (équivalent AVSpeechSynthesizer) ---------- */
 let frVoice = null;
@@ -377,14 +410,16 @@ function checkAnswer(chosen) {
 
   if (chosen === q.correct) {
     vm.score++;
+    playSound("ok");
     vm.currentCombo++;
     if (vm.currentCombo > vm.bestCombo) vm.bestCombo = vm.currentCombo;
     triggerCombo();
   } else {
+    playSound("ko");
     vm.currentCombo = 0;
   }
 
-  if (vm.speechEnabled) speak(`${q.a} fois ${q.b} égale ${q.product}`);
+  if (vm.speechEnabled) setTimeout(() => speak(`${q.a} fois ${q.b} égale ${q.product}`), 320);
   finishIfLast(() => { vm.perfectScore = vm.score === vm.questions.length; });
   render();
 }
@@ -396,8 +431,9 @@ function timeUp() {
   vm.timerExpired = true;
   vm.chosenAnswer = null;
   vm.currentCombo = 0;
+  playSound("ko");
   const q = currentQuestion();
-  if (vm.speechEnabled && q) speak(`${q.a} fois ${q.b} égale ${q.product}`);
+  if (vm.speechEnabled && q) setTimeout(() => speak(`${q.a} fois ${q.b} égale ${q.product}`), 320);
   finishIfLast(() => { vm.perfectScore = false; });
   render();
 }
@@ -617,6 +653,9 @@ function viewSetup() {
       <div class="section">
         <button class="toggle-row" data-toggle-flag="speechEnabled">
           <span>Énoncer la bonne réponse</span><span class="sw ${vm.speechEnabled ? "on" : ""}"></span>
+        </button>
+        <button class="toggle-row" data-toggle-flag="soundEnabled">
+          <span>Sons de réussite et d'erreur</span><span class="sw ${vm.soundEnabled ? "on" : ""}"></span>
         </button>
       </div>
 
