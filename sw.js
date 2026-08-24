@@ -2,7 +2,7 @@
    Stratégie : precache complet à l'installation, puis cache-first.
    L'app tient en 5 fichiers, il n'y a donc rien à charger au lancement. */
 
-const VERSION = "v1";
+const VERSION = "v2";
 const CACHE = `tables-${VERSION}`;
 
 const SHELL = [
