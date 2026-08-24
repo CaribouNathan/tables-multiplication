@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tables">
+<meta name="description" content="Quiz et révision des tables de multiplication. Caribou Labs.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" media="(prefers-color-scheme: dark)" href="icons/apple-touch-icon-dark.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<title>Tables de multiplication</title>
+<style>
+:root{
+  --bg:#F2F2F7; --card:#FFFFFF; --fill:rgba(120,120,128,.2);
+  --sep:rgba(60,60,67,.29); --text:#000; --text2:rgba(60,60,67,.6);
+  --green:#34C759; --green-deep:rgb(8,110,84); --accent:#007AFF;
+  --orange:#FF9500; --red:#FF3B30; --red-deep:rgb(163,43,43);
+  --purple:#AF52DE; --pink:#FF2D55; --yellow:#FFCC00; --blue:#007AFF;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#000; --card:#1C1C1E; --fill:rgba(120,120,128,.32);
+    --sep:rgba(84,84,88,.65); --text:#FFF; --text2:rgba(235,235,245,.6);
+    --green-deep:#3ddc9a; --red-deep:#FF6961; }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px; line-height:1.3; overflow-x:hidden;
+  -webkit-user-select:none; user-select:none;
+  transition:background .3s;
+}
+body.rainbow{
+  background:linear-gradient(135deg,rgba(255,59,48,.08),rgba(0,122,255,.08),rgba(52,199,89,.08));
+  background-size:300% 300%; animation:rbShift 6s ease-in-out infinite alternate;
+}
+@keyframes rbShift{from{background-position:0% 50%}to{background-position:100% 50%}}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+#app{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen{flex:1;display:flex;flex-direction:column;animation:fade .25s ease-in-out}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.spacer{flex:1;min-height:12px}
+.caption{font-size:12px;color:var(--text2)}
+.caption2{font-size:11px;color:var(--text2)}
+.subheadline{font-size:15px}
+.headline{font-size:17px;font-weight:600}
+.secondary{color:var(--text2)}
+.center{text-align:center}
+
+/* ---------- Nav bar ---------- */
+.navbar{display:flex;align-items:center;padding:12px 16px;background:var(--card);
+  border-bottom:.5px solid var(--sep);position:relative}
+.navbar .title{position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:600;pointer-events:none}
+.navbar .back{display:flex;align-items:center;gap:4px;color:var(--green);font-size:15px;z-index:1}
+.navbar .back svg{width:15px;height:15px}
+
+/* ---------- Home ---------- */
+.home{align-items:center;justify-content:center;padding:0 32px;text-align:center}
+.logo{font-size:72px;font-weight:600;color:var(--green);line-height:1;display:inline-block;
+  transition:transform .3s cubic-bezier(.2,1.4,.4,1);cursor:pointer}
+.logo.rb{animation:hue 2s linear infinite}
+@keyframes hue{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+.home h1{font-size:22px;font-weight:600;margin:8px 0 0;cursor:pointer}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;min-height:22px}
+.badge{font-size:11px;padding:4px 6px;border-radius:6px}
+.badge.inv{background:rgba(175,82,222,.15)} .badge.hard{background:rgba(255,59,48,.15)}
+.badge.rb{background:rgba(255,45,85,.15)}
+.home-buttons{width:100%;display:flex;flex-direction:column;gap:16px;margin-top:60px}
+.home-btn{display:flex;align-items:center;gap:18px;padding:18px;background:var(--card);
+  border-radius:16px;border:.5px solid var(--sep);text-align:left;transition:transform .12s}
+.home-btn:active{transform:scale(.98)}
+.home-btn .ico{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:24px;flex:none}
+.home-btn .ico.blue{background:rgba(0,122,255,.15)} .home-btn .ico.green{background:rgba(52,199,89,.15)}
+.home-btn .lbl{flex:1}
+.home-btn .lbl b{display:block;font-size:17px;font-weight:600}
+.home-btn .chev{color:var(--text2);font-weight:600}
+.credit{font-size:11px;color:var(--text2);padding:16px 0}
+
+/* ---------- Grids & rows ---------- */
+.pad{padding:16px 20px 30px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid3.tight{gap:6px}
+.tile{background:var(--card);border:.5px solid var(--sep);border-radius:14px;padding:16px 4px;text-align:center;transition:transform .12s}
+.tile:active{transform:scale(.96)}
+.tile .n{font-size:36px;font-weight:600;display:block;line-height:1.05}
+.tile .s{font-size:11px;color:var(--text2)}
+.ttile{background:var(--card);border:.5px solid var(--sep);border-radius:10px;padding:8px 2px;text-align:center}
+.ttile .n{font-size:22px;font-weight:600;display:block;line-height:1.15}
+.ttile .s{font-size:9px;color:var(--text2)}
+.ttile.on{background:rgba(52,199,89,.15);border-color:rgba(52,199,89,.6);color:var(--green-deep)}
+.ttile.on .s{color:rgba(52,199,89,.9)}
+.trow{display:flex;align-items:center;gap:0;background:var(--card);border:.5px solid var(--sep);
+  border-radius:12px;padding:14px 28px;margin-bottom:8px;transition:transform .12s}
+.trow:active{transform:scale(.99)}
+.trow .op{font-size:22px;font-weight:500;width:90px;text-align:left}
+.trow .eq{font-size:22px;color:var(--text2);width:30px;text-align:center}
+.trow .res{font-size:26px;font-weight:700;color:var(--green)}
+.trow.secret .op{width:100px} .trow.secret .res{color:var(--purple)}
+
+/* ---------- Setup ---------- */
+.section{margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
+.section-label{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.8px}
+.row-center{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.pill{font-size:12px;color:var(--text2);background:var(--card);border:.5px solid var(--sep);
+  border-radius:99px;padding:7px 14px}
+.count{font-size:15px;font-weight:500;background:var(--card);border-radius:99px;padding:8px 16px;min-width:44px;text-align:center}
+.count.on{background:var(--accent);color:#fff}
+.mode-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 4px;
+  background:var(--card);border:.5px solid var(--sep);border-radius:12px;font-size:15px;font-weight:500}
+.mode-btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 0}
+.sw{width:51px;height:31px;border-radius:99px;background:var(--fill);position:relative;flex:none;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:transform .2s}
+.sw.on{background:var(--green)} .sw.on.red{background:var(--red)}
+.sw.on::after{transform:translateX(20px)}
+.cta{width:100%;padding:14px;border-radius:14px;background:var(--accent);color:#fff;
+  font-size:17px;font-weight:600;transition:transform .12s,opacity .2s}
+.cta:active{transform:scale(.98)}
+.cta.green{background:var(--green)}
+.cta.plain{background:var(--card);color:var(--text);border:.5px solid var(--sep);font-size:15px;font-weight:400}
+
+/* ---------- Quiz ---------- */
+.quiz-top{display:flex;align-items:center;gap:8px;padding:16px 20px 8px;font-size:12px}
+.quiz-top .quit{display:flex;align-items:center;gap:4px;color:var(--text2);font-size:15px}
+.chips{flex:1;display:flex;gap:8px;justify-content:center}
+.chip{display:flex;align-items:center;gap:4px;font-size:15px;font-weight:600;
+  padding:4px 10px;border-radius:99px;white-space:nowrap}
+.score{color:var(--text2);display:flex;gap:4px;align-items:center;white-space:nowrap}
+.bar{height:6px;border-radius:3px;background:var(--fill);margin:0 20px 6px;overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:3px;background:var(--green);transition:width .3s ease-in-out}
+.bar.thin{height:4px;margin-bottom:4px}
+.bar.thin > i{transition:width 1s linear}
+.question{font-size:52px;font-weight:600;text-align:center;line-height:1.1}
+.question.inv{font-size:46px}
+.answers{display:grid;gap:14px;padding:0 20px;margin-top:30px}
+.ans{padding:20px 4px;font-size:28px;font-weight:600;background:var(--card);
+  border:1px solid var(--sep);border-radius:14px;transition:background .2s,border-color .2s,transform .12s}
+.ans:active{transform:scale(.97)}
+.ans.ok{background:rgba(52,199,89,.18);border-color:rgba(52,199,89,.7)}
+.ans.ko{background:rgba(255,59,48,.15);border-color:rgba(255,59,48,.5)}
+.ans.dim{opacity:.55}
+.feedback{min-height:24px;margin-top:16px;text-align:center;font-size:17px;font-weight:600}
+.combo-flash{position:fixed;top:120px;left:50%;transform:translateX(-50%);z-index:50;
+  font-size:32px;font-weight:800;color:#fff;background:rgba(255,149,0,.92);
+  padding:12px 24px;border-radius:20px;box-shadow:0 0 24px rgba(255,149,0,.5);
+  animation:pop .25s cubic-bezier(.2,1.5,.4,1);pointer-events:none;white-space:nowrap}
+@keyframes pop{from{transform:translateX(-50%) scale(.4);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
+
+/* ---------- Result ---------- */
+.result{align-items:center;text-align:center;padding:0 20px;gap:20px;justify-content:center}
+.result .emoji{font-size:72px;line-height:1;transition:transform .3s cubic-bezier(.2,1.5,.4,1);cursor:pointer}
+.result .emoji.hard{transform:scale(1.2)}
+.result h2{font-size:28px;font-weight:600;margin:0}
+.result .score-big{font-size:64px;font-weight:600;line-height:1}
+.stars{display:flex;gap:4px;font-size:22px;color:var(--fill)}
+.stars .on{color:var(--yellow)}
+.info-line{font-size:15px;display:flex;align-items:center;gap:6px;justify-content:center}
+.combo-box{font-size:15px;color:var(--orange);background:rgba(255,149,0,.1);padding:8px 12px;border-radius:10px}
+.mini-stars{display:flex;gap:6px;font-size:13px;color:var(--fill)}
+.mini-stars .on{color:var(--yellow)}
+.champ-cta{background:rgb(255,153,26);color:#fff;font-size:15px;font-weight:600;
+  padding:10px 20px;border-radius:99px}
+.result-actions{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px;padding:0 20px 40px}
+
+/* ---------- Champion ---------- */
+.champion{background:linear-gradient(135deg,rgb(255,217,51),rgb(255,153,26));min-height:100dvh}
+.champion .scroll{padding:50px 20px 40px;text-align:center}
+.champion .trophy{font-size:90px;display:inline-block;animation:pop2 .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop2{from{transform:scale(.3)}to{transform:scale(1)}}
+.champion h2{font-size:36px;font-weight:900;color:#fff;margin:12px 0 0;letter-spacing:-.5px}
+.champion .sub{font-size:20px;font-weight:600;color:rgba(255,255,255,.85);margin-top:4px}
+.champion .intro{font-size:15px;color:rgba(255,255,255,.85);margin:12px 30px 0;line-height:1.4}
+.hints{background:var(--card);border-radius:20px;margin-top:28px;text-align:left;overflow:hidden}
+.hints h3{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.8px;
+  padding:20px 20px 12px;margin:0}
+.hint{display:flex;gap:14px;padding:12px 20px}
+.hint + .hint{border-top:.5px solid var(--sep)}
+.hint .ic{font-size:28px;width:44px;text-align:center;flex:none}
+.hint b{font-size:15px;font-weight:600;display:block}
+.hint p{font-size:12px;color:var(--text2);margin:3px 0 0;line-height:1.4}
+.champion .cta{background:#fff;color:rgb(255,153,26);margin-top:28px}
+
+/* ---------- Sheet ---------- */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:flex;
+  align-items:flex-end;justify-content:center;animation:fade .2s}
+.sheet{background:var(--bg);width:100%;max-width:560px;max-height:92dvh;border-radius:14px 14px 0 0;
+  display:flex;flex-direction:column;animation:up .35s cubic-bezier(.2,.9,.3,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet .navbar{border-radius:14px 14px 0 0;justify-content:flex-end}
+.sheet .close{color:var(--accent);font-size:17px;z-index:1}
+
+/* ---------- Confetti ---------- */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.confetti i{position:absolute;width:10px;height:10px;border-radius:50%;
+  transition:transform 2.5s cubic-bezier(.4,0,.9,.6),opacity 2.5s ease-in}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   Modèle
+   ========================================================= */
+const ALL_TABLES = [2,3,4,5,6,7,8,9,10];
+
+const vm = {
+  screen: "home",            // home | learnPicker | learnTable | setup | quiz | result | champion
+  learnTable: 2,
+
+  // Réglages
+  selectedTables: [2,3],
+  questionCount: 5,
+  answerCount: 4,
+  timerEnabled: false,
+  timerDuration: 10,
+  globalTimerEnabled: false,
+  globalTimerDuration: 60,
+  speechEnabled: true,
+
+  // Partie en cours
+  questions: [],
+  current: 0,
+  score: 0,
+  answered: false,
+  chosenAnswer: null,
+  timeLeft: 10,
+  timerExpired: false,
+  globalTimeLeft: 60,
+  globalTimerExpired: false,
+  quizElapsedSeconds: 0,
+  quizStart: null,
+
+  // Easter eggs
+  currentCombo: 0,
+  bestCombo: 0,
+  showConfetti: false,
+  rainbowMode: false,
+  inverseMode: false,
+  hardMode: false,
+  showSecretTable: false,
+  secretTableNumber: 11,
+  perfectScore: false,
+  perfectCount: 0,
+  homeTapCount: 0,
+  resultEmojiTapCount: 0
+};
+
+let tickTimer = null, globalTimer = null;
+
+/* =========================================================
+   Utilitaires
+   ========================================================= */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(0, i); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const plural = (n, s = "s") => n > 1 ? s : "";
+
+/* ---------- Synthèse vocale (équivalent AVSpeechSynthesizer) ---------- */
+let frVoice = null;
+function pickVoice() {
+  const voices = speechSynthesis.getVoices();
+  frVoice = voices.find(v => v.lang === "fr-FR") || voices.find(v => v.lang.startsWith("fr")) || null;
+}
+if ("speechSynthesis" in window) {
+  pickVoice();
+  speechSynthesis.addEventListener("voiceschanged", pickVoice);
+}
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "fr-FR";
+  if (frVoice) u.voice = frVoice;
+  u.rate = 1;          // AVSpeechUtteranceDefaultSpeechRate (0.5 côté Apple) = vitesse normale
+  speechSynthesis.speak(u);
+}
+
+/* =========================================================
+   Génération des questions
+   ========================================================= */
+function buildQuestions() {
+  const pool = [];
+  for (const t of vm.selectedTables) for (let i = 2; i <= 10; i++) pool.push([t, i]);
+  shuffle(pool); shuffle(pool);
+
+  let selected = [];
+  while (selected.length < vm.questionCount) selected = selected.concat(shuffle(pool.slice()));
+  selected = selected.slice(0, vm.questionCount);
+
+  return selected.map(([a, b]) => {
+    const product = a * b;
+    const wrongsNeeded = vm.answerCount - 1;
+
+    if (vm.inverseMode) {
+      // « ? × b = product » → la réponse est a
+      const wrong = [];
+      let attempts = 0;
+      while (wrong.length < wrongsNeeded && attempts < 200) {
+        const c = rnd(2, 10);
+        if (c !== a && !wrong.includes(c)) wrong.push(c);
+        attempts++;
+      }
+      for (let x = 2; x <= 10 && wrong.length < wrongsNeeded; x++)
+        if (x !== a && !wrong.includes(x)) wrong.push(x);
+      return { a, b, product, correct: a, choices: shuffle([a, ...wrong.slice(0, wrongsNeeded)]) };
+    }
+
+    // « a × b = ? » → la réponse est product
+    const wrongs = [];
+    let attempts = 0;
+    while (wrongs.length < wrongsNeeded && attempts < 200) {
+      const rt = vm.selectedTables[rnd(0, vm.selectedTables.length - 1)] ?? a;
+      const val = vm.hardMode
+        ? product + rnd(1, 4) * (Math.random() < .5 ? 1 : -1)
+        : rt * rnd(2, 10);
+      if (val !== product && val > 0 && !wrongs.includes(val)) wrongs.push(val);
+      attempts++;
+    }
+    while (wrongs.length < wrongsNeeded) {
+      const val = product + (wrongs.length + 1);
+      if (!wrongs.includes(val)) wrongs.push(val); else break;
+    }
+    return { a, b, product, correct: product, choices: shuffle([product, ...wrongs.slice(0, wrongsNeeded)]) };
+  });
+}
+
+/* =========================================================
+   Déroulement du quiz
+   ========================================================= */
+function currentQuestion() { return vm.questions[vm.current] || null; }
+function progress() { return vm.questions.length ? vm.current / vm.questions.length : 0; }
+
+function startQuiz() {
+  vm.questions = buildQuestions();
+  Object.assign(vm, {
+    current: 0, score: 0, answered: false, chosenAnswer: null,
+    currentCombo: 0, perfectScore: false, timerExpired: false,
+    globalTimerExpired: false, quizElapsedSeconds: 0, quizStart: Date.now(),
+    screen: "quiz"
+  });
+  if (vm.timerEnabled) startTimer();
+  if (vm.globalTimerEnabled) startGlobalTimer();
+  render();
+}
+
+function recordElapsed() {
+  if (vm.quizStart) vm.quizElapsedSeconds = Math.floor((Date.now() - vm.quizStart) / 1000);
+}
+
+function checkAnswer(chosen) {
+  const q = currentQuestion();
+  if (vm.answered || !q) return;
+  stopTimer();
+  vm.answered = true;
+  vm.chosenAnswer = chosen;
+
+  if (chosen === q.correct) {
+    vm.score++;
+    vm.currentCombo++;
+    if (vm.currentCombo > vm.bestCombo) vm.bestCombo = vm.currentCombo;
+    triggerCombo();
+  } else {
+    vm.currentCombo = 0;
+  }
+
+  if (vm.speechEnabled) speak(`${q.a} fois ${q.b} égale ${q.product}`);
+  finishIfLast(() => { vm.perfectScore = vm.score === vm.questions.length; });
+  render();
+}
+
+function timeUp() {
+  if (vm.answered) return;
+  stopTimer();
+  vm.answered = true;
+  vm.timerExpired = true;
+  vm.chosenAnswer = null;
+  vm.currentCombo = 0;
+  const q = currentQuestion();
+  if (vm.speechEnabled && q) speak(`${q.a} fois ${q.b} égale ${q.product}`);
+  finishIfLast(() => { vm.perfectScore = false; });
+  render();
+}
+
+function finishIfLast(setPerfect) {
+  if (vm.current + 1 < vm.questions.length) return;
+  stopGlobalTimer();
+  recordElapsed();
+  setTimeout(() => {
+    setPerfect();
+    vm.showConfetti = vm.perfectScore;
+    if (vm.perfectScore) vm.perfectCount++;
+    vm.screen = "result";
+    render();
+  }, 1000);
+}
+
+function nextQuestion() {
+  vm.current++;
+  vm.answered = false;
+  vm.chosenAnswer = null;
+  vm.timerExpired = false;
+  if (vm.timerEnabled) startTimer();
+  render();
+}
+
+function startTimer() {
+  vm.timeLeft = vm.timerDuration;
+  clearInterval(tickTimer);
+  tickTimer = setInterval(() => {
+    if (vm.timeLeft > 1) { vm.timeLeft--; updateTimerUI(); }
+    else timeUp();
+  }, 1000);
+}
+function stopTimer() { clearInterval(tickTimer); tickTimer = null; }
+function stopGlobalTimer() { clearInterval(globalTimer); globalTimer = null; }
+
+function startGlobalTimer() {
+  vm.globalTimeLeft = vm.globalTimerDuration;
+  clearInterval(globalTimer);
+  globalTimer = setInterval(() => {
+    if (vm.globalTimeLeft > 1) { vm.globalTimeLeft--; updateTimerUI(); }
+    else globalTimeUp();
+  }, 1000);
+}
+
+function globalTimeUp() {
+  stopGlobalTimer(); stopTimer(); recordElapsed();
+  Object.assign(vm, { globalTimerExpired: true, answered: true, timerExpired: true,
+                      chosenAnswer: null, currentCombo: 0 });
+  render();
+  setTimeout(() => { vm.perfectScore = false; vm.screen = "result"; render(); }, 1000);
+}
+
+function triggerCombo() {
+  const milestones = { 3: "COMBO x3 🔥", 5: "COMBO x5 ⚡️", 7: "COMBO x7 🌟", 10: "COMBO x10 🚀" };
+  const text = milestones[vm.currentCombo];
+  if (!text) return;
+  const el = document.createElement("div");
+  el.className = "combo-flash";
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.transition = "opacity .3s"; el.style.opacity = 0;
+                     setTimeout(() => el.remove(), 300); }, 1500);
+}
+
+function resultData() {
+  if (vm.perfectScore) return { emoji: "🏆", title: "PARFAIT !", message: "Score légendaire ! Tu es imbattable !", stars: 5 };
+  const pct = vm.score / vm.questions.length;
+  if (pct >= .8) return { emoji: "😄", title: "Excellent !", message: "Tu maîtrises vraiment bien les tables !", stars: 4 };
+  if (pct >= .6) return { emoji: "😊", title: "Bien joué !", message: "Continue comme ça, tu progresses !", stars: 3 };
+  if (pct >= .4) return { emoji: "🙂", title: "Pas mal !", message: "Encore un peu d'entraînement et ce sera parfait !", stars: 2 };
+  return { emoji: "💪", title: "Courage !", message: "Continue à t'entraîner, tu vas y arriver !", stars: 1 };
+}
+
+/* =========================================================
+   Confettis
+   ========================================================= */
+function launchConfetti(duration = 3000) {
+  const layer = document.createElement("div");
+  layer.className = "confetti";
+  const colors = ["#FF3B30","#FF9500","#FFCC00","#34C759","#007AFF","#AF52DE","#FF2D55"];
+  const dots = [];
+  for (let i = 0; i < 80; i++) {
+    const d = document.createElement("i");
+    d.style.left = Math.random() * 100 + "%";
+    d.style.top = rnd(-100, 0) + "px";
+    d.style.background = colors[rnd(0, colors.length - 1)];
+    layer.appendChild(d); dots.push(d);
+  }
+  document.body.appendChild(layer);
+  requestAnimationFrame(() => dots.forEach(d => {
+    d.style.transform = `translate(${rnd(-60,60)}px, ${window.innerHeight + 200}px)`;
+    d.style.opacity = 0;
+  }));
+  setTimeout(() => layer.remove(), duration);
+}
+
+/* =========================================================
+   Rendu
+   ========================================================= */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+const chevL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4 7 12l8 8"/></svg>`;
+const star = f => `<span class="${f ? "on" : ""}">${f ? "★" : "☆"}</span>`;
+
+function navbar(title, backTo) {
+  return `<div class="navbar">
+    <button class="back" data-go="${backTo}">${chevL}<span>Retour</span></button>
+    <div class="title">${esc(title)}</div>
+  </div>`;
+}
+
+function viewHome() {
+  const b = [];
+  if (vm.inverseMode) b.push(`<span class="badge inv">🔄 Inversé</span>`);
+  if (vm.hardMode)    b.push(`<span class="badge hard">💀 Difficile</span>`);
+  if (vm.rainbowMode) b.push(`<span class="badge rb">🌈 Arc-en-ciel</span>`);
+  return `<div class="screen home">
+    <div class="spacer"></div>
+    <div>
+      <div class="logo ${vm.rainbowMode ? "rb" : ""}" id="logo" role="button" tabindex="0" aria-label="Logo multiplication">×</div>
+      <h1 id="home-title" role="button" tabindex="0">Tables de multiplication</h1>
+      <div class="badges">${b.join("")}</div>
+    </div>
+    <div class="home-buttons">
+      <button class="home-btn" data-go="learnPicker">
+        <span class="ico blue">📘</span>
+        <span class="lbl"><b>Apprendre</b><span class="caption">Consulter une table</span></span>
+        <span class="chev">›</span>
+      </button>
+      <button class="home-btn" data-go="setup">
+        <span class="ico green">🎮</span>
+        <span class="lbl"><b>Jouer</b><span class="caption">Lancer le quiz</span></span>
+        <span class="chev">›</span>
+      </button>
+    </div>
+    <div class="spacer"></div>
+    <div class="credit">Application créée par Caribou Labs</div>
+  </div>`;
+}
+
+function viewLearnPicker() {
+  return `<div class="screen">
+    ${navbar("Apprendre", "home")}
+    <div class="scroll"><div class="pad">
+      <p class="subheadline secondary center" style="margin:8px 0 20px">Quelle table veux-tu apprendre ?</p>
+      <div class="grid3">
+        ${ALL_TABLES.map(t => `<button class="tile" data-learn="${t}">
+          <span class="n">${t}</span><span class="s">table de ${t}</span></button>`).join("")}
+      </div>
+    </div></div>
+  </div>`;
+}
+
+function viewLearnTable() {
+  const t = vm.learnTable;
+  let rows = "";
+  for (let i = 1; i <= 10; i++)
+    rows += `<button class="trow" data-say="${t} fois ${i} égale ${t * i}">
+      <span class="op">${t} × ${i}</span><span class="eq">=</span><span class="res">${t * i}</span></button>`;
+  return `<div class="screen">
+    ${navbar("Table de " + t, "learnPicker")}
+    <div class="scroll"><div class="pad">
+      ${rows}
+      <button class="cta green" data-train="${t}" style="margin-top:8px">🎮&nbsp; S'entraîner avec cette table</button>
+    </div></div>
+  </div>`;
+}
+
+function viewSetup() {
+  const counts = (list, key, fmt = n => n) => list.map(n =>
+    `<button class="count ${vm[key] === n ? "on" : ""}" data-set="${key}" data-val="${n}">${fmt(n)}</button>`).join("");
+
+  return `<div class="screen">
+    ${navbar("Quiz", "home")}
+    <div class="scroll"><div class="pad" style="padding-top:14px">
+
+      <div class="section">
+        <div class="section-label">Choisis tes tables</div>
+        <div class="grid3 tight">
+          ${ALL_TABLES.map(t => `<button class="ttile ${vm.selectedTables.includes(t) ? "on" : ""}" data-toggle="${t}">
+            <span class="n">${t}</span><span class="s">× 1 à 10</span></button>`).join("")}
+        </div>
+        <div class="row-center">
+          <button class="pill" data-act="selectAll">Tout sélectionner</button>
+          <button class="pill" data-act="clearAll">Tout désélectionner</button>
+        </div>
+        <div class="caption center">${vm.selectedTables.length} table${plural(vm.selectedTables.length)} sélectionnée${plural(vm.selectedTables.length)}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Nombre de réponses proposées</div>
+        <div class="row-center">${counts([2,4,6,8], "answerCount")}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Nombre de questions</div>
+        <div class="row-center">${counts([5,10,15,20], "questionCount")}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Minuterie par question</div>
+        <button class="toggle-row" data-toggle-flag="timerEnabled">
+          <span>Activer le timer</span><span class="sw ${vm.timerEnabled ? "on" : ""}"></span>
+        </button>
+        ${vm.timerEnabled ? `<div class="row-center">${counts([5,10,15,20,30], "timerDuration")}</div>` : ""}
+      </div>
+
+      <div class="section">
+        <div class="section-label">Minuterie globale</div>
+        <button class="toggle-row" data-toggle-flag="globalTimerEnabled">
+          <span>Limiter le temps total</span><span class="sw ${vm.globalTimerEnabled ? "on" : ""}"></span>
+        </button>
+        ${vm.globalTimerEnabled ? `<div class="row-center">${counts([60,120,180,300], "globalTimerDuration", n => n < 60 ? n + "s" : (n / 60) + " min")}</div>` : ""}
+      </div>
+
+      <div class="section">
+        <button class="toggle-row" data-toggle-flag="speechEnabled">
+          <span>Énoncer la bonne réponse</span><span class="sw ${vm.speechEnabled ? "on" : ""}"></span>
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Mode de question</div>
+        <div style="display:flex;gap:12px">
+          <button class="mode-btn ${!vm.inverseMode ? "on" : ""}" data-inverse="0">⊜ Normal</button>
+          <button class="mode-btn ${vm.inverseMode ? "on" : ""}" data-inverse="1">? Inversé</button>
+        </div>
+        <div class="caption center">${vm.inverseMode
+          ? "Ex : ? × 3 = 21 → trouve le bon chiffre"
+          : "Ex : 7 × 3 = ? → trouve le bon résultat"}</div>
+      </div>
+
+      ${vm.hardMode ? `<div class="section">
+        <div class="section-label">Mode Difficile</div>
+        <button class="toggle-row" data-toggle-flag="hardMode">
+          <span>Réponses plus proches</span><span class="sw on red"></span>
+        </button>
+      </div>` : ""}
+
+      <button class="cta" data-act="start" style="margin:6px 0 16px">Commencer !</button>
+    </div></div>
+  </div>`;
+}
+
+function timerColor() {
+  if (vm.timeLeft > vm.timerDuration / 2) return "var(--green)";
+  if (vm.timeLeft > vm.timerDuration / 4) return "var(--orange)";
+  return "var(--red)";
+}
+function globalTimerColor() {
+  if (vm.globalTimeLeft > vm.globalTimerDuration / 2) return "var(--blue)";
+  if (vm.globalTimeLeft > vm.globalTimerDuration / 4) return "var(--orange)";
+  return "var(--red)";
+}
+function fmtGlobal() {
+  const m = Math.floor(vm.globalTimeLeft / 60), s = vm.globalTimeLeft % 60;
+  return m + ":" + String(s).padStart(2, "0");
+}
+
+function viewQuiz() {
+  const q = currentQuestion();
+  if (!q) return `<div class="screen"></div>`;
+  const done = vm.answered || vm.timerExpired;
+  const cols = vm.answerCount === 6 ? 3 : 2;
+
+  let feedback = "&nbsp;", fcolor = "";
+  if (vm.globalTimerExpired) { feedback = "⏱ Temps total écoulé !"; fcolor = "var(--red)"; }
+  else if (vm.timerExpired)  { feedback = `⏱ Temps écoulé ! La réponse était ${q.correct}`; fcolor = "var(--orange)"; }
+  else if (vm.answered)      {
+    const ok = vm.chosenAnswer === q.correct;
+    feedback = ok ? "Bravo ! C'est exact !" : `Pas tout à fait... La réponse était ${q.correct}`;
+    fcolor = ok ? "var(--green-deep)" : "var(--red-deep)";
+  }
+
+  return `<div class="screen">
+    <div class="quiz-top">
+      <button class="quit" data-act="quit">✕ <span>Quitter</span></button>
+      <div class="chips">
+        ${vm.globalTimerEnabled ? `<span class="chip" id="gchip" style="color:${globalTimerColor()};background:color-mix(in srgb, ${globalTimerColor()} 12%, transparent)">🕐 <span id="gtime">${fmtGlobal()}</span></span>` : ""}
+        ${vm.timerEnabled && !vm.answered ? `<span class="chip" id="tchip" style="color:${timerColor()};background:color-mix(in srgb, ${timerColor()} 12%, transparent)">⏲ <span id="ttime">${vm.timeLeft}s</span></span>` : ""}
+      </div>
+      <span class="score">${vm.currentCombo >= 3 ? `<span style="color:var(--orange)">🔥${vm.currentCombo}</span>` : ""}Score : ${vm.score}</span>
+    </div>
+
+    <div class="bar"><i style="width:${progress() * 100}%"></i></div>
+    ${vm.timerEnabled ? `<div class="bar thin"><i id="tbar" style="width:${vm.timeLeft / vm.timerDuration * 100}%;background:${timerColor()}"></i></div>` : ""}
+    <div class="caption center">${vm.current + 1} / ${vm.questions.length}</div>
+
+    <div class="spacer"></div>
+
+    <div>
+      ${vm.inverseMode
+        ? `<div class="question inv">? × ${q.b} = ${q.product}</div>
+           <div class="subheadline secondary center" style="margin-top:6px">Trouve le nombre manquant</div>`
+        : `<div class="question">${q.a} × ${q.b} = ?</div>
+           <div class="subheadline secondary center" style="margin-top:6px">Table de ${q.a}</div>`}
+    </div>
+
+    <div class="answers" style="grid-template-columns:repeat(${cols},1fr)">
+      ${q.choices.map((c, i) => {
+        let cls = "";
+        if (done) {
+          if (c === q.correct) cls = "ok";
+          else if (c === vm.chosenAnswer) cls = "ko";
+          else cls = "dim";
+        }
+        return `<button class="ans ${cls}" data-answer="${c}" ${done ? "disabled" : ""} aria-keyshortcuts="${i + 1}">${c}</button>`;
+      }).join("")}
+    </div>
+
+    <div class="feedback" style="color:${fcolor}">${feedback}</div>
+
+    ${done && vm.current + 1 < vm.questions.length
+      ? `<div class="center" style="margin-top:10px"><button class="pill" data-act="next" style="font-size:15px;padding:10px 28px;color:var(--text)">Question suivante →</button></div>`
+      : ""}
+
+    <div class="spacer"></div>
+  </div>`;
+}
+
+function updateTimerUI() {
+  const gt = $("#gtime"), tt = $("#ttime"), tb = $("#tbar"),
+        gc = $("#gchip"), tc = $("#tchip");
+  if (gt) { gt.textContent = fmtGlobal(); gc.style.color = globalTimerColor();
+            gc.style.background = `color-mix(in srgb, ${globalTimerColor()} 12%, transparent)`; }
+  if (tt) { tt.textContent = vm.timeLeft + "s"; tc.style.color = timerColor();
+            tc.style.background = `color-mix(in srgb, ${timerColor()} 12%, transparent)`; }
+  if (tb) { tb.style.width = (vm.timeLeft / vm.timerDuration * 100) + "%"; tb.style.background = timerColor(); }
+}
+
+function viewResult() {
+  const r = resultData();
+  let timeLine = "";
+  if (vm.globalTimerExpired) {
+    timeLine = `<div class="info-line" style="color:var(--orange)">⏱ Temps total écoulé. Retente ta chance !</div>`;
+  } else if (vm.timerEnabled || vm.globalTimerEnabled) {
+    const m = Math.floor(vm.quizElapsedSeconds / 60), s = vm.quizElapsedSeconds % 60;
+    const txt = m > 0
+      ? `Tu as fini en ${m} minute${plural(m)} et ${s} seconde${plural(s)}`
+      : `Tu as fini en ${s} seconde${plural(s)}`;
+    timeLine = `<div class="info-line" style="color:var(--blue)">⏱ ${txt}</div>`;
+  }
+
+  let progressBlock = "";
+  if (vm.perfectScore) {
+    const stars = [0,1,2,3,4].map(i => star(i < vm.perfectCount)).join("");
+    progressBlock = `<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div class="mini-stars">${stars}</div>
+      ${vm.perfectCount >= 5
+        ? `<button class="champ-cta" data-go="champion">🏆 Voir l'écran Champion !</button>`
+        : `<div class="caption center">Plus que ${5 - vm.perfectCount} parfait${plural(5 - vm.perfectCount)} pour débloquer une surprise !</div>`}
+    </div>`;
+  }
+
+  return `<div class="screen result">
+    <div class="spacer"></div>
+    <div class="emoji ${vm.hardMode ? "hard" : ""}" id="result-emoji" role="button" tabindex="0">${r.emoji}</div>
+    <h2>${r.title}</h2>
+    <div class="score-big">${vm.score} / ${vm.questions.length}</div>
+    <div class="stars">${[1,2,3,4,5].map(i => star(i <= r.stars)).join("")}</div>
+    <p class="subheadline secondary" style="margin:0 20px;max-width:340px">${r.message}</p>
+    ${timeLine}
+    ${vm.bestCombo >= 3 ? `<div class="combo-box">🔥 Meilleur combo : ${vm.bestCombo}</div>` : ""}
+    ${vm.hardMode ? `<div class="caption" style="color:var(--red)">💀 Mode Difficile débloqué !</div>` : ""}
+    ${progressBlock}
+    <div class="spacer"></div>
+    <div class="result-actions">
+      <button class="cta" data-go="setup">Rejouer</button>
+      <button class="cta plain" data-go="home">Accueil</button>
+    </div>
+  </div>`;
+}
+
+const HINTS = [
+  ["🌈", "Mode Arc-en-ciel", "Sur l'écran d'accueil, appuie longtemps (3 secondes) sur le grand × vert…"],
+  ["🔓", "Table secrète", "Tape 7 fois sur « Tables de multiplication » à l'accueil pour débloquer une table mystère !"],
+  ["🔥", "Combo enflammé", "Enchaîne les bonnes réponses sans te tromper pour déclencher des flashs de combo !"],
+  ["💀", "Mode Difficile", "Sur l'écran de résultat, tape 3 fois sur l'emoji pour activer un mode… très difficile."]
+];
+
+function viewChampion() {
+  return `<div class="screen champion">
+    <div class="scroll">
+      <div class="trophy">🏆</div>
+      <h2>CHAMPION !</h2>
+      <div class="sub">5 quiz parfaits !</div>
+      <p class="intro">Tu es un vrai génie des tables de multiplication.<br>Tu mérites de connaître les secrets de l'appli…</p>
+      <div class="hints">
+        <h3>🕵️ SECRETS À DÉCOUVRIR</h3>
+        ${HINTS.map(([ic, t, d]) => `<div class="hint">
+          <span class="ic">${ic}</span>
+          <div><b>${t}</b><p>${d}</p></div>
+        </div>`).join("")}
+      </div>
+      <button class="cta" data-go="home">Retour à l'accueil</button>
+    </div>
+  </div>`;
+}
+
+function viewSecretSheet() {
+  const n = vm.secretTableNumber;
+  let rows = "";
+  for (let i = 0; i <= 10; i++)
+    rows += `<div class="trow secret"><span class="op">${n} × ${i}</span><span class="eq">=</span><span class="res">${n * i}</span></div>`;
+  return `<div class="sheet-bg" data-act="closeSheet"><div class="sheet" role="dialog" aria-modal="true">
+    <div class="navbar"><button class="close" data-act="closeSheet">Fermer</button></div>
+    <div class="scroll"><div class="pad" style="padding-top:12px;text-align:center">
+      <div class="headline" style="padding:12px 0">🔓 Table secrète débloquée !</div>
+      <div style="font-size:22px;font-weight:600;color:var(--purple);padding-bottom:8px">Table de ${n}</div>
+      <div style="text-align:left">${rows}</div>
+    </div></div>
+  </div></div>`;
+}
+
+function render() {
+  const views = { home: viewHome, learnPicker: viewLearnPicker, learnTable: viewLearnTable,
+                  setup: viewSetup, quiz: viewQuiz, result: viewResult, champion: viewChampion };
+  $("#app").innerHTML = views[vm.screen]();
+  document.body.classList.toggle("rainbow", vm.rainbowMode && vm.screen !== "champion");
+
+  $$(".sheet-bg").forEach(e => e.remove());
+  if (vm.showSecretTable) document.body.insertAdjacentHTML("beforeend", viewSecretSheet());
+
+  if (vm.showConfetti) { vm.showConfetti = false; launchConfetti(3000); }
+  if (vm.screen === "champion") { launchConfetti(3000); vm.perfectCount = 0; }
+  if (vm.screen === "home") bindHomeGestures();
+}
+
+/* =========================================================
+   Easter eggs de l'accueil : appui long 3 s + 7 taps
+   ========================================================= */
+function bindHomeGestures() {
+  const logo = $("#logo");
+  let pressTimer = null;
+  const start = () => {
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => {
+      logo.style.transform = "scale(1.3)";
+      setTimeout(() => { logo.style.transform = "scale(1)"; }, 300);
+      vm.rainbowMode = !vm.rainbowMode;
+      setTimeout(render, 320);
+    }, 3000);
+  };
+  const cancel = () => clearTimeout(pressTimer);
+  ["pointerdown"].forEach(e => logo.addEventListener(e, start));
+  ["pointerup","pointerleave","pointercancel"].forEach(e => logo.addEventListener(e, cancel));
+  logo.addEventListener("contextmenu", e => e.preventDefault());
+  logo.addEventListener("keydown", e => { if (e.key === "Enter") { vm.rainbowMode = !vm.rainbowMode; render(); } });
+
+  $("#home-title").addEventListener("click", () => {
+    vm.homeTapCount++;
+    if (vm.homeTapCount >= 7) {
+      vm.homeTapCount = 0;
+      vm.secretTableNumber = Math.random() < .5 ? 11 : 0;
+      vm.showSecretTable = true;
+      render();
+    }
+  });
+}
+
+/* =========================================================
+   Événements globaux (délégation)
+   ========================================================= */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-go],[data-learn],[data-train],[data-say],[data-toggle],[data-toggle-flag],[data-set],[data-inverse],[data-answer],[data-act]");
+  if (!t) return;
+
+  if (t.dataset.go) {
+    if (vm.screen === "quiz") { stopTimer(); stopGlobalTimer(); }
+    vm.screen = t.dataset.go; render(); return;
+  }
+  if (t.dataset.learn)  { vm.learnTable = +t.dataset.learn; vm.screen = "learnTable"; render(); return; }
+  if (t.dataset.train)  { vm.selectedTables = [+t.dataset.train]; vm.screen = "setup"; render(); return; }
+  if (t.dataset.say)    { speak(t.dataset.say); return; }
+
+  if (t.dataset.toggle) {
+    const n = +t.dataset.toggle, i = vm.selectedTables.indexOf(n);
+    if (i >= 0) { if (vm.selectedTables.length > 1) vm.selectedTables.splice(i, 1); }
+    else vm.selectedTables.push(n);
+    render(); return;
+  }
+  if (t.dataset.toggleFlag) { vm[t.dataset.toggleFlag] = !vm[t.dataset.toggleFlag]; render(); return; }
+  if (t.dataset.set)     { vm[t.dataset.set] = +t.dataset.val; render(); return; }
+  if (t.dataset.inverse) { vm.inverseMode = t.dataset.inverse === "1"; render(); return; }
+  if (t.dataset.answer)  { checkAnswer(+t.dataset.answer); return; }
+
+  switch (t.dataset.act) {
+    case "selectAll":  vm.selectedTables = ALL_TABLES.slice(); render(); break;
+    case "clearAll":   vm.selectedTables = [vm.selectedTables[0] ?? 2]; render(); break;
+    case "start":      if (vm.selectedTables.length) startQuiz(); break;
+    case "quit":       stopTimer(); stopGlobalTimer(); vm.screen = "setup"; render(); break;
+    case "next":       nextQuestion(); break;
+    case "closeSheet": if (e.target === t) { vm.showSecretTable = false; render(); } break;
+  }
+});
+
+// Easter egg : 3 taps sur l'emoji de résultat → mode Difficile
+document.addEventListener("click", e => {
+  if (!e.target.closest("#result-emoji")) return;
+  vm.resultEmojiTapCount++;
+  if (vm.resultEmojiTapCount >= 3) { vm.resultEmojiTapCount = 0; vm.hardMode = true; render(); }
+});
+
+// Clavier : 1-8 pour répondre, Entrée/Espace pour la question suivante, Échap pour fermer
+document.addEventListener("keydown", e => {
+  if (vm.showSecretTable && e.key === "Escape") { vm.showSecretTable = false; render(); return; }
+  if (vm.screen !== "quiz") return;
+  if (/^[1-8]$/.test(e.key)) {
+    const btn = $$(".ans")[+e.key - 1];
+    if (btn && !btn.disabled) btn.click();
+  } else if (e.key === "Enter" || e.key === " ") {
+    const next = $('[data-act="next"]');
+    if (next) { e.preventDefault(); next.click(); }
+  }
+});
+
+/* =========================================================
+   Démarrage PWA
+   ========================================================= */
+/* Raccourcis du manifest : ?ecran=quiz / ?ecran=apprendre */
+const startScreen = new URLSearchParams(location.search).get("ecran");
+if (startScreen === "quiz") vm.screen = "setup";
+else if (startScreen === "apprendre") vm.screen = "learnPicker";
+
+/* Service worker : installation hors-ligne (HTTPS ou localhost uniquement) */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(err => console.warn("SW:", err));
+  });
+}
+
+render();
+</script>
+</body>
+</html>
